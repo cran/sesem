@@ -54,7 +54,7 @@ Should model convergence fail for certain lag bins, those bins will be skipped a
 \examples{
 
 data=truelove
-truelove_red<-truelove[c(1:60),]
+truelove_red<-truelove[c(1:60),c(1:7)]
 distancematrix<-calc.dist(truelove_red)
 Truelove_bins<-make.bin(distancematrix,type="ALL",p.dist=10)
 binsize<-Truelove_bins[1][[1]] #truelove lowland bin sizes
@@ -65,18 +65,13 @@ plotbin(distancematrix,binsize)
 covariances<-make.covar(truelove_red,distancematrix,binsize,binname)
 covariances
 
-# path model for the truelove dataset
+# reduced path model for the truelove dataset
+
 spatial_model<-'
-	Gram ~ Moisture
 	N_Fix ~ Bryoph + Lich + SoilCrust
-	SoilCrust ~ Bryoph + Lich + Gram + Shrubs + Forbs	
-	Bryoph ~ Gram + Shrubs + Forbs + Moisture
-	Lich ~ Moisture + Forbs + Gram + Shrubs + Bryoph
-	Forbs ~ Moisture
-	Gram ~~ Forbs
-	Shrubs ~ Moisture	
-	Gram ~~ Shrubs
-	Shrubs ~~ Forbs
+	SoilCrust ~ Bryoph + Lich	
+	Lich ~ Bryoph + Moisture
+	Bryoph ~ Moisture
 	'
 
 results<-runModels(spatial_model,covariances)

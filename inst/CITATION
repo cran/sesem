@@ -15,5 +15,5 @@ citEntry(entry = "Article",
   paste("Eric G. Lamb, Kerrie Mengersen, Katherine J. Stewart, Udayanga Attanayake, and Steven D. Siciliano (2014).",
         "Spatial structural equation modeling.",
         "Ecology.",
-        "URL http://www..")
+        "URL http://dx.doi.org/10.1890/13-1997.1")
 )

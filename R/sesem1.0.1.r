@@ -298,10 +298,7 @@ runModels<-function(spatial_model,covdata){
 		mod.indices[length(bin.summary[,1])]<-data.frame(modificationIndices(semmodel)[,4])
 	return(list(
 	model_fit<-data.frame(model.fit,
-	row.names=c("fmin","chisq","df","pvalue","baseline.chisq","baseline.df","baseline.pvalue","cfi","tli","nnfi",
-	"rfi","nfi","pnfi","ifi","rni","logl","unrestricted.logl","npar","aic","bic","ntotal","bic2","rmsea",
-	"rmsea.ci.lower","rmsea.ci.upper","rmsea.pvalue","rmr","rmr_nomean","srmr","srmr_nomean","cn_05","cn_01",
-	"gfi","agfi","pgfi","mfi","ecvi")), # dataframe containing model fit indices for all bins
+	row.names=names(fitMeasures(semmodel))), # dataframe containing model fit indices for all bins
 	par_name<-data.frame(par.name), # parameter names in rows
 	unst_est<-data.frame(unst.est), # unstandardized parameter estimates in rows, column for each lag distance bin
 	est_se<-data.frame(est.se), # std error of unstandardized parameter estimates in rows, column for each lag distance bin
