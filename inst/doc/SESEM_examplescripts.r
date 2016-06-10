@@ -1,11 +1,11 @@
 #Example Script for Spatial SEM
 
-# Updated Jan 22, 2014
+# Updated June 9,2016
 
 # Citation: Lamb, E.G., K. Mengersen, K.J. Stewart, U. Attanayake, S.D. Siciliano. 2014. Spatially explicit 
-# structural equation modeling. Ecology xx:xxx-xxx.
+# structural equation modeling. Ecology 95:2434-2442.
 
-# Functions here were tested using R 3.0.2
+# Functions here were tested using R 3.2.2
 # libraries "lavaan", "gplots", and "mgcv" are required
 
 
@@ -149,6 +149,8 @@ spatial_model_results_true<-runModels(spatial_model,truelove_covar)
 spatial_model_results_alex<-runModels(spatial_model,alex_covar)
 spatial_model_results_plant<-runModels(spatial_model_plant,plant_covar)
 
+spatial_model_results<-runModels(spatial_model,alex_covar)
+
 # Step 5 Extract analysis results
 
 	# modelsummary() extracts basic model summary information from the object
@@ -186,13 +188,12 @@ bin.rsquare(spatial_model_results_plant,bin="binflat")
 #	rmsea_err should confidence limits for rmsea be plotted?
 #	pch, lwd, lty options for formatting points and fit lines.
 
-plotmodelfit(spatial_model_results_true) # plots all metrics without lines and with rmsea errors
-											# note that warnings will arise from the plotting of rmsea errors with zero length
-											#these can be ignored
+plotmodelfit(spatial_model_results_true) # plots all metrics without lines and with rmsea errors							
 plotmodelfit(spatial_model_results_alex,add.line="step",rmsea_err=F,lwd=2) # plots stepped fit line
 plotmodelfit(spatial_model_results_plant,add.line="smooth",rmsea_err=F,pch=16,lty=1) # plots smoothed fit line
 
 plotmodelfit(spatial_model_results_true,plot="cfi",add.line="smooth",pch=16,lty=1,lwd=4,cex.lab=1.5,cex=2,cex.axis=1.5) #plots only cfi
+
 
 # Step 6b plot path coefficent changes with lag distances
 

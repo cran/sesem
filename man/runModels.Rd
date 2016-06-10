@@ -23,7 +23,7 @@ Given a path model (spatial_model) specified using lavaan syntax, and a list obj
 }
 \value{
 
-\item{1}{a table of model fit estimates for each model. Values available in this table include the following: "fmin","chisq","df","pvalue","baseline.chisq","baseline.df","baseline.pvalue","cfi","tli","nnfi",	"rfi","nfi","pnfi","ifi","rni","logl","unrestricted.logl","npar","aic","bic","ntotal","bic2","rmsea","rmsea.ci.lower","rmsea.ci.upper","rmsea.pvalue","rmr","rmr_nomean","srmr","srmr_nomean","cn_05","cn_01","gfi","agfi","pgfi","mfi","ecvi". See the lavaan documentation for an explanation of each value.}
+\item{1}{a table of model fit estimates for each model. See the lavaan documentation for an explanation of each value.}
 \item{2}{table containing a vector of parameter numbers and a character vector containing the names of the paths included in each model.}
 \item{3}{a table of unstandardized path coefficient estimates for each path in each model}
 \item{4}{standard error of unstandardized path coefficient estimates for each path in each model}
@@ -36,7 +36,7 @@ Given a path model (spatial_model) specified using lavaan syntax, and a list obj
 \item{11}{a copy of the bin.summary table in the input covdata object}
 }
 \references{
-Lamb, E. G., K. Mengersen, K. J. Stewart, U. Attanayake, and S. D. Siciliano. Submitted. Spatially explicit structural equation modeling. Ecology.
+Lamb, E. G., K. Mengersen, K. J. Stewart, U. Attanayake, and S. D. Siciliano. 2014. Spatially explicit structural equation modeling. \emph{Ecology} \bold{95}:2434-2442.
 
 Rosseel, Y. 2012 lavaan: an R package for structural equation modeling. \emph{Journal of Statistical Software} \bold{48}:1-36.
 }

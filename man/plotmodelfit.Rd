@@ -47,7 +47,7 @@ plot title font size
 }
 }
 \references{
-Lamb, E. G., K. Mengersen, K. J. Stewart, U. Attanayake, and S. D. Siciliano. Submitted. Spatially explicit structural equation modeling. Ecology.
+Lamb, E. G., K. Mengersen, K. J. Stewart, U. Attanayake, and S. D. Siciliano. 2014. Spatially explicit structural equation modeling. \emph{Ecology} \bold{95}:2434-2442.
 }
 \author{
 Eric Lamb

@@ -1,11 +1,11 @@
 # Functions for compute spatial variance-covariance matrix and other spatial SEM steps
  
-# Updated Fan 22, 2014
+# Updated June 9, 2016
 
 # Citation: Lamb, E.G., K. Mengersen, K.J. Stewart, U. Attanayake, S.D. Siciliano. 2014. Spatially explicit 
-# structural equation modeling. Ecology xx:xxx-xxx.
+# structural equation modeling. Ecology 95:2434-2442.
 
-# Functions here were tested using R 3.0.2
+# Functions here were tested using R 3.3.0
 # libraries "lavaan", "gplots", and "mgcv" are required
 
 
@@ -152,6 +152,7 @@ bin_names<-binname  #vector of bin names for each lag distance bin
 		# binsize should have n+1 elements where n is the number of lag distance bins desired
 		
 #' @export
+#' @importFrom graphics abline barplot hist  
 	
 plotbin<-function(dist.mat,binsize) {
 	par(mfrow=c(1,2),mar=c(7,7,2,2),mgp=c(5,1,0))
@@ -174,6 +175,7 @@ plotbin<-function(dist.mat,binsize) {
 	# binname is a vector of same length as aa.bin with names for each lag distance bin
 
 #' @export
+#' @importFrom stats cov
 make.covar<-function(datafile,dist.mat,binsize,binname) {
 	aa.tmp <- na.omit(datafile)					# omit rows with NA's (can impute later)
 	aa.x = length(aa.tmp[,1])					# no. rows
@@ -222,15 +224,8 @@ make.covar<-function(datafile,dist.mat,binsize,binname) {
 #			as produced by make.covar, fits the sem model to the non-spatial covariance matrix, 	
 #			and for the covariance matrices corresponding to all lag distance bins found there.
 #		Produces a list object containing:
-#			[1] a table of model fit estimates for each model. 
-#					Values available in this table include the following: 
-#					"fmin","chisq","df","pvalue","baseline.chisq","baseline.df","baseline.pvalue",
-#					"cfi","tli","nnfi", "rfi","nfi","pnfi","ifi","rni","logl","unrestricted.logl",
-#					"npar","aic","bic","ntotal","bic2","rmsea","rmsea.ci.lower","rmsea.ci.upper",
-#					"rmsea.pvalue","rmr","rmr_nomean","srmr","srmr_nomean","cn_05","cn_01","gfi","agfi",
-#					"pgfi","mfi","ecvi". See the lavaan documentation for an explanation of each value.
-#			[2] table containing a vector of parameter numbers and a character vector containing the names 
-#					of the paths included in each model.
+#			[1] a table of model fit estimates for each model. See the lavaan documentation for an explanation of each value.
+#			[2] table containing a vector of parameter numbers and a character vector containing the names of the paths included in each model.
 #			[3] unstandardized path coefficient estimates
 #			[4] standard error of unstandardized path coefficient estimates
 #			[5] p-values for each unstandardized path coefficient estimate
@@ -243,6 +238,8 @@ make.covar<-function(datafile,dist.mat,binsize,binname) {
 
 #' @export
 #' @import lavaan
+
+
 runModels<-function(spatial_model,covdata){
 	bin.summary<-covdata[[1]]
 	model.fit<-matrix(numeric(1*length(bin.summary[,1])),ncol=length(bin.summary[,1]))
@@ -264,38 +261,43 @@ runModels<-function(spatial_model,covdata){
 	names(mod.indices)<-bin.summary[,1]
 	for (i in 2:length(bin.summary[,1])-1) {
 		bin_name<-bin.summary[i,1]
+		print(factor(bin_name))### need to make this cleaner
 		covmatrix<-data.frame(covdata[[4]][,,i])
 		names(covmatrix)<-covdata[[2]]
 		covmatrix<-as.matrix(round(covmatrix,8))#rounding needed to make matrix symmetrical 
-												#difference in number ofdigits saved between 
+												#difference in number of digits saved between 
 												#upper and lower; as.matrix needed to convert 
 												#dataframe to matrix for sem
-		semmodel<-sem(spatial_model,sample.cov=covmatrix,sample.nobs=bin.summary[i,4])
+		semmodel<-sem(spatial_model,sample.cov=covmatrix,sample.nobs=bin.summary[i,4])	
+		if(inspect(semmodel,"converged")==FALSE) {print("Warning: convergence failure")}### figure out how to get to print w/o quotes
+		options(warn=1)# print warnings when they occur
 		if(inspect(semmodel,"converged")==TRUE) {
-			model.fit[i]<-data.frame(fitMeasures(semmodel))
-			unst.est[i]<-data.frame(parameterEstimates(semmodel)[,4])
-			est.se[i]<-data.frame(parameterEstimates(semmodel)[,5])
-			p.val[i]<-data.frame(parameterEstimates(semmodel)[,7])
-			std.est[i]<-data.frame(parameterEstimates(semmodel,standardized=T)[,11])
+		model.fit[i]<-data.frame(fitMeasures(semmodel))
+			unst.est[i]<-data.frame(parameterEstimates(semmodel)$est)
+			est.se[i]<-data.frame(parameterEstimates(semmodel)$se)
+			p.val[i]<-data.frame(parameterEstimates(semmodel)$pvalue)
+			std.est[i]<-data.frame(parameterEstimates(semmodel,standardized=T)$std.all)
 			if(i==1) {varname.r.square<-(rownames(data.frame((inspect(semmodel,"rsquare")))))}
 			r.square[i]<-data.frame(inspect(semmodel,"rsquare"))
-			if(i==1) {mod.parname<-data.frame(paste(modificationIndices(semmodel)[,1],modificationIndices(semmodel)[,2],modificationIndices(semmodel)[,3]))
-			colnames(mod.parname)<-c("parameter name")}
-			mod.indices[i]<-data.frame(modificationIndices(semmodel)[,4])
+			mod.indices[i]<-data.frame(modificationIndices(semmodel)$mi) 
+			
+			######### mod indices may need to be disabled for convergence issues
 }}
 		covmatrix<-data.frame(covdata[[3]])#nonspatial (flat) matrix
 		names(covmatrix)<-covdata[[2]]
 		covmatrix<-as.matrix(round(covmatrix,8)) 
 		semmodel<-sem(spatial_model,sample.cov=covmatrix,sample.nobs=bin.summary[length(bin.summary[,1]),4])
-		par.name<-data.frame(seq(1:length(parameterEstimates(semmodel)[,1])),paste(parameterEstimates(semmodel)[,1],parameterEstimates(semmodel)[,2],parameterEstimates(semmodel)[,3]))
-				colnames(par.name)<-c("parameter.number","parameter.name")
+		par.name<-data.frame(seq(1:length(parameterEstimates(semmodel)[,1])),paste(parameterEstimates(semmodel)[,"lhs"],parameterEstimates(semmodel)[,"op"],parameterEstimates(semmodel)[,"rhs"]))
+		colnames(par.name)<-c("parameter.number","parameter.name")
 		model.fit[length(bin.summary[,1])]<-data.frame(fitMeasures(semmodel))
-		unst.est[length(bin.summary[,1])]<-data.frame(parameterEstimates(semmodel)[,4])
-		est.se[length(bin.summary[,1])]<-data.frame(parameterEstimates(semmodel)[,5])
-		p.val[length(bin.summary[,1])]<-data.frame(parameterEstimates(semmodel)[,7])
-		std.est[length(bin.summary[,1])]<-data.frame(parameterEstimates(semmodel,standardized=T)[,11])
+		unst.est[length(bin.summary[,1])]<-data.frame(parameterEstimates(semmodel)[,"est"])
+		est.se[length(bin.summary[,1])]<-data.frame(parameterEstimates(semmodel)[,"se"])
+		p.val[length(bin.summary[,1])]<-data.frame(parameterEstimates(semmodel)[,"pvalue"])
+		std.est[length(bin.summary[,1])]<-data.frame(parameterEstimates(semmodel,standardized=T)["std.all"])
 		r.square[length(bin.summary[,1])]<-data.frame(inspect(semmodel,"rsquare"))
-		mod.indices[length(bin.summary[,1])]<-data.frame(modificationIndices(semmodel)[,4])
+		mod.parname<-data.frame(paste(modificationIndices(semmodel)[,"lhs"],modificationIndices(semmodel)[,"op"],modificationIndices(semmodel)[,"rhs"]))
+		colnames(mod.parname)<-c("parameter name")
+		mod.indices[length(bin.summary[,1])]<-data.frame(modificationIndices(semmodel)[,"mi"])
 	return(list(
 	model_fit<-data.frame(model.fit,
 	row.names=names(fitMeasures(semmodel))), # dataframe containing model fit indices for all bins
@@ -310,7 +312,9 @@ runModels<-function(spatial_model,covdata){
 	mod_indices<-data.frame(mod.indices),	# modification indices in rows, column for each lag distance bin
 	bin.summary
 	))
+	options(warn=0) # return to default warning
 }	
+
 
 # modelsummary(spatial_model_results)
 #	spatial_model_results = object output from run.Models 
@@ -376,6 +380,9 @@ bin.rsquare<-function(spatial_model_results,bin="binflat") {
 #	pch, lwd, lty cex, cex.lab, cex.axis, cex.main options for formatting points and fit lines.
 #' @export
 #' @import gplots
+#' @importFrom graphics abline par plot lines
+#' @importFrom stats qchisq
+
 plotmodelfit<-function(spatial_model_results,plots="all",add.line="none",rmsea_err=T,pch=16,lwd=2,lty=1,cex=1,cex.lab=1,cex.axis=1,cex.main=1.5) {
 	plot.chi<-ifelse(plots=="chi",T,ifelse(plots=="all",T,F))
 	plot.cfi<-ifelse(plots=="cfi",T,ifelse(plots=="all",T,F))
@@ -393,35 +400,38 @@ plotmodelfit<-function(spatial_model_results,plots="all",add.line="none",rmsea_e
 	add.line.step<-ifelse(add.line=="step",T,F)
 	add.line.smooth<-ifelse(add.line=="smooth",T,F)
 	if(plot.chi==T) {
-	plot(matrix(bin.summary[,3]),as.numeric(matrix(fitindices[2,])),main="Chi Sq. vs Lag dist",pch=pch,xlab="Lag Distances",ylab="Model Chi Square Values",cex=cex,cex.lab=cex.lab,cex.axis=cex.axis,cex.main=cex.main)
-		abline(h=qchisq(0.95,fitindices[3,1]),lwd=2,lty=3)
-		if(add.line.step==T) {lines(bin.summary[,3][bin.sequence],as.numeric(matrix(fitindices[2,]))[bin.sequence],lwd=lwd,lty=lty)}
+	plot(matrix(bin.summary[,3]),as.numeric(matrix(fitindices["chisq",])),main="Chi Sq. vs Lag dist",pch=pch,xlab="Lag Distances",ylab="Model Chi Square Values",cex=cex,cex.lab=cex.lab,cex.axis=cex.axis,cex.main=cex.main)
+		abline(h=qchisq(0.95,fitindices["df",1]),lwd=2,lty=3)
+		if(add.line.step==T) {lines(bin.summary[,3][bin.sequence],as.numeric(matrix(fitindices["chisq",]))[bin.sequence],lwd=lwd,lty=lty)}
 		if(add.line.smooth==T) {lines(lowess(bin.summary_noflat[,3][bin.sequence_noflat],as.numeric(matrix(fitindices_noflat[2,]))[bin.sequence_noflat]),lwd=lwd,lty=lty)}
 	}
 	if(plot.cfi==T) {
-	plot(matrix(bin.summary[,3]),as.numeric(matrix(fitindices[8,])),main="CFI vs Lag dist",pch=pch,xlab="Lag Distances",ylab="Model CFI Values",cex=cex,cex.lab=cex.lab,cex.axis=cex.axis,cex.main=cex.main)
+	plot(matrix(bin.summary[,3]),as.numeric(matrix(fitindices["cfi",])),main="CFI vs Lag dist",pch=pch,xlab="Lag Distances",ylab="Model CFI Values",cex=cex,cex.lab=cex.lab,cex.axis=cex.axis,cex.main=cex.main)
 		abline(h=0.9,lwd=2,lty=3)
-		if(add.line.step==T) {lines(bin.summary[,3][bin.sequence],as.numeric(matrix(fitindices[8,]))[bin.sequence],lwd=lwd,lty=lty)}
-		if(add.line.smooth==T) {lines(lowess(bin.summary_noflat[,3][bin.sequence_noflat],as.numeric(matrix(fitindices_noflat[8,]))[bin.sequence_noflat]),lwd=lwd,lty=lty)}
+		if(add.line.step==T) {lines(bin.summary[,3][bin.sequence],as.numeric(matrix(fitindices["cfi",]))[bin.sequence],lwd=lwd,lty=lty)}
+		if(add.line.smooth==T) {lines(lowess(bin.summary_noflat[,3][bin.sequence_noflat],as.numeric(matrix(fitindices_noflat["cfi",]))[bin.sequence_noflat]),lwd=lwd,lty=lty)}
 	}
 	if(plot.rmsea==T) {
-	if(rmsea_err==T) {plotCI(matrix(bin.summary[,3]),as.numeric(matrix(fitindices[23,])),uiw=as.numeric(matrix(fitindices[25,])),liw=as.numeric(matrix(fitindices[24,])),
-		pch=pch,gap=0,main="RMSEA vs Lag Dist",xlab="Lag Distances",ylab="Model RMSEA Values",cex=cex,cex.lab=cex.lab,cex.axis=cex.axis,cex.main=cex.main)}
-	if(rmsea_err==F) {plot(matrix(bin.summary[,3]),as.numeric(matrix(fitindices[23,])),pch=pch,main="RMSEA vs Lag Dist",xlab="Lag Distances",ylab="Model RMSEA Values",cex=cex,cex.lab=cex.lab,cex.axis=cex.axis,cex.main=cex.main)}
+	if(rmsea_err==T) {
+	options(warn=-1)#suppresses warnings arising from rmsea errors=0
+	plotCI(matrix(bin.summary[,3]),as.numeric(matrix(fitindices["rmsea",])),uiw=as.numeric(matrix(fitindices["rmsea.ci.upper",])),liw=as.numeric(matrix(fitindices["rmsea.ci.lower",])),
+		pch=pch,gap=0,main="RMSEA vs Lag Dist",xlab="Lag Distances",ylab="Model RMSEA Values",cex=cex,cex.lab=cex.lab,cex.axis=cex.axis,cex.main=cex.main)
+	options(warn=-1)}
+	if(rmsea_err==F) {plot(matrix(bin.summary[,3]),as.numeric(matrix(fitindices["rmsea",])),pch=pch,main="RMSEA vs Lag Dist",xlab="Lag Distances",ylab="Model RMSEA Values",cex=cex,cex.lab=cex.lab,cex.axis=cex.axis,cex.main=cex.main)}
 		abline(h=0.05,lwd=2,lty=3)
-		if(add.line.step==T) {lines(bin.summary[,3][bin.sequence],as.numeric(matrix(fitindices[23,]))[bin.sequence],lwd=lwd,lty=lty)}
-		if(add.line.smooth==T) {lines(lowess(bin.summary_noflat[,3][bin.sequence_noflat],as.numeric(matrix(fitindices_noflat[23,]))[bin.sequence_noflat]),lwd=lwd,lty=lty)}
+		if(add.line.step==T) {lines(bin.summary[,3][bin.sequence],as.numeric(matrix(fitindices["rmsea",]))[bin.sequence],lwd=lwd,lty=lty)}
+		if(add.line.smooth==T) {lines(lowess(bin.summary_noflat[,3][bin.sequence_noflat],as.numeric(matrix(fitindices_noflat["rmsea",]))[bin.sequence_noflat]),lwd=lwd,lty=lty)}
 	}
 	if(plot.srmr==T) {
-	plot(matrix(bin.summary[,3]),as.numeric(matrix(fitindices[29,])),main="SRMR vs Lag dist",pch=pch,xlab="Lag Distances",ylab="Model SRMR Values",cex=cex,cex.lab=cex.lab,cex.axis=cex.axis,cex.main=cex.main)
+	plot(matrix(bin.summary[,3]),as.numeric(matrix(fitindices["srmr",])),main="SRMR vs Lag dist",pch=pch,xlab="Lag Distances",ylab="Model SRMR Values",cex=cex,cex.lab=cex.lab,cex.axis=cex.axis,cex.main=cex.main)
 		abline(h=0.08,lwd=2,lty=3)
-		if(add.line.step==T) {lines(bin.summary[,3][bin.sequence],as.numeric(matrix(fitindices[29,]))[bin.sequence],lwd=lwd,lty=lty)}
-		if(add.line.smooth==T) {lines(lowess(bin.summary_noflat[,3][bin.sequence_noflat],as.numeric(matrix(fitindices_noflat[29,]))[bin.sequence_noflat]),lwd=lwd,lty=lty)}
+		if(add.line.step==T) {lines(bin.summary[,3][bin.sequence],as.numeric(matrix(fitindices["srmr",]))[bin.sequence],lwd=lwd,lty=lty)}
+		if(add.line.smooth==T) {lines(lowess(bin.summary_noflat[,3][bin.sequence_noflat],as.numeric(matrix(fitindices_noflat["srmr",]))[bin.sequence_noflat]),lwd=lwd,lty=lty)}
 	}
 	par(mfrow=c(1,1),mar=c(4,4,2,2))
 }
 
-#	plotpath(spatial_model_results,path.type="directed",add.line="none",rmsea_err=T,pch=16,lwd=2,lty=1)
+#	plotpath(spatial_model_results,path.type="directed",selectpath="none selected",add.line="none",add.error=T,pcut=0.05,pch=16,lwd=2,lty=1,cex.main=1.2)
 #   
 #	spatial_model_results = object output by run.Models
 #	path.type= options for selecting which paths to plot
@@ -445,6 +455,8 @@ plotmodelfit<-function(spatial_model_results,plots="all",add.line="none",rmsea_e
 
 #' @export
 #' @import gplots
+#' @importFrom graphics abline lines plot
+
 plotpath<-function(spatial_model_results,path.type="directed",selectpath="none selected",add.line="none",add.error=T,pcut=0.05,pch=16,lwd=2,lty=1,cex.main=1.2) {
 	path.type.dir<-ifelse(path.type=="directed",T,F)
 	path.type.undir<-ifelse(path.type=="undirected",T,F)
@@ -512,6 +524,9 @@ plotpath<-function(spatial_model_results,path.type="directed",selectpath="none s
 #	additional arguments formatting figure
 #' @export
 #' @import mgcv gplots
+#' @importFrom graphics points lines
+#' @importFrom grDevices n2mfrow
+
 gam.path<-function(spatial_model_results,path.type="directed",selectpath="none selected",plot.points=T,se.plot=T,lwd.pred=2,lty.pred=1,lwd.se=2,lty.se=3,cex=1,cex.axis=1,cex.lab=1,xlab="Lag Distance",ylab="Unst. Path Coeff.",yaxt="s",xaxt="s") {
 	path.type.dir<-ifelse(path.type=="directed",T,F)
 	path.type.undir<-ifelse(path.type=="undirected",T,F)
@@ -569,6 +584,8 @@ gam.path<-function(spatial_model_results,path.type="directed",selectpath="none s
 #	 modcut eliminates printing of average MI values below the cutoff. The default is 4
 # 
 #' @export
+#' @importFrom stats na.omit
+
 avg.modindices<-function(spatial_model_results,modcut=4){
 	mod.indices<-spatial_model_results[[10]][,names(spatial_model_results[[10]])!="binflat"]
 	rownames(mod.indices)<-spatial_model_results[[9]][,1]

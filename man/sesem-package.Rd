@@ -13,7 +13,7 @@ Structural equation modeling (SEM) is a powerful statistical approach for the te
 Package: \tab sesem\cr
 Type: \tab Package\cr
 Version: \tab 1.0\cr
-Date: \tab 2014-01-21\cr
+Date: \tab 2016-06-09\cr
 License: \tab GPL (>= 2)\cr
 }
 Package sesem allows spatially explicit structural equation modeling. It allows a structural equation model to be fit to a number of spatially explicit covariance matrices to explore how the strength of structural path coefficients changes with scale. In brief an SESEM analysis involves:
@@ -29,7 +29,7 @@ Eric G. Lamb, Kerrie Mengersen, Katherine J. Stewart, Udayanga Attanayake, and S
 Maintainer: Eric Lamb <eric.lamb@usask.ca>
 }
 \references{
-Lamb, E. G., K. Mengersen, K. J. Stewart, U. Attanayake, and S. D. Siciliano. Submitted. Spatially explicit structural equation modeling. Ecology.
+Lamb, E. G., K. Mengersen, K. J. Stewart, U. Attanayake, and S. D. Siciliano. 2014. Spatially explicit structural equation modeling. \emph{Ecology} \bold{95}:2434-2442.
 
 Rosseel, Y. 2012 lavaan: an R package for structural equation modeling. \emph{Journal of Statistical Software} \bold{48}:1-36.
 
